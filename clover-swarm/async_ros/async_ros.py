@@ -1,9 +1,14 @@
 import trio
+import rospy
+
+import logging
 #  import attr
 from functools import partial
 from typing import Optional, Callable
 
 import time
+
+logger = logging.getLogger(__name__)
 
 
 async def debug_counter():
@@ -20,6 +25,8 @@ def some_blocking(*args, **kwargs):
     time.sleep(2)
     print("+done blocking call")
 
+    return "some result"
+
 
 # @attr.define()
 class AsyncService:
@@ -32,11 +39,18 @@ class AsyncService:
         self._service_proxy: Optional[Callable] = None
         # maybe needs lock?
 
-    async def connect(self):
-        # rospy.wait_for_service(self.name)
-        # proxy = rospy.ServiceProxy(self.name, self.service_class)
+    def __str__(self):
+        return f"{self.__class__.__name__}: {self.name}"
 
-        proxy = some_blocking  # debug code
+    async def connect(self, timeout=None):
+        logger.info(f"Waiting until service '{self.name}' is available.")
+        service_waiter = partial(rospy.wait_for_service, self.name, timeout=timeout)
+        await trio.to_thread.run_sync(service_waiter)
+
+        logger.info(f"Service '{self.name}' is available, connecting proxy.")
+        proxy = rospy.ServiceProxy(self.name, self.service_class)
+
+        # proxy = some_blocking  # debug code
 
         self._service_proxy = proxy
 
@@ -49,21 +63,30 @@ class AsyncService:
 
     async def __call__(self, *args, **kwargs):
         if self._service_proxy is None:
+            logger.warning(f"Service {self.name} was not connected previously, connecting now. "
+                           f"Use AsyncService.connect() to connect service proxy preemptively.")
             await self.connect()
-
+        
+        logger.debug(f"Calling service {self.name} with args {args}; kwargs {kwargs}")
         proxy = partial(self._service_proxy, *args, **kwargs)
         result = await trio.to_thread.run_sync(proxy)
+        logger.debug(f"Service {self.name} returned result {result}")
         return result
 
 
 if __name__ == '__main__':
-    async def main():
-        service = AsyncService("124", "SOME CLASS OBJ")
 
-        await service.call("Some call")
+    logging.basicConfig(level=logging.DEBUG)
+    
+    async def main():
+        navigate = AsyncService("124", "SOME CLASS OBJ")
+
+        await navigate("Some call")
 
         async with trio.open_nursery() as nursery:
             nursery.start_soon(debug_counter)
-            nursery.start_soon(service.call, "Another call")
+            nursery.start_soon(navigate, "Another call")
+
+        print("ALL DONE")
 
     trio.run(main)
