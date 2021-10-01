@@ -37,7 +37,7 @@ class AsyncService:
         self.name = name
         self.service_class = service_class
         self._service_proxy: Optional[Callable] = None
-        # maybe needs lock?
+        self._lock = trio.Lock()
 
     def __str__(self):
         return f"{self.__class__.__name__}: {self.name}"
@@ -57,8 +57,11 @@ class AsyncService:
     async def call(self, *args, **kwargs):
         return await self.__call__(*args, **kwargs)
 
-    def sync_call(self, *args, **kwargs):
+    def call_nowait(self, *args, **kwargs):
+        """NO LOCK!"""
+        logger.debug(f"Calling service {self.name} with args {args}; kwargs {kwargs}")
         result = self._service_proxy(*args, **kwargs)
+        logger.debug(f"Service {self.name} returned result {result}")
         return result
 
     async def __call__(self, *args, **kwargs):
@@ -66,17 +69,15 @@ class AsyncService:
             logger.warning(f"Service {self.name} was not connected previously, connecting now. "
                            f"Use AsyncService.connect() to connect service proxy preemptively.")
             await self.connect()
-        
-        logger.debug(f"Calling service {self.name} with args {args}; kwargs {kwargs}")
-        proxy = partial(self._service_proxy, *args, **kwargs)
-        result = await trio.to_thread.run_sync(proxy)
-        logger.debug(f"Service {self.name} returned result {result}")
-        return result
+
+        async with self._lock:
+            proxy = partial(self.call_nowait, *args, **kwargs)
+            result = await trio.to_thread.run_sync(proxy)
+            return result
 
 
 if __name__ == '__main__':
-
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.CRITICAL)
     
     async def main():
         navigate = AsyncService("124", "SOME CLASS OBJ")
