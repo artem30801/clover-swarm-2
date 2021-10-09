@@ -1,0 +1,2 @@
+class TopicError(Exception):
+    pass

@@ -1,8 +1,8 @@
-import trio
+import anyio
 import rospy
 
 import logging
-#  import attr
+import attr
 from functools import partial
 from typing import Optional, Callable
 
@@ -15,7 +15,7 @@ async def debug_counter():
     print("-started counting")
     for i in range(6):
         print("-counting", i)
-        await trio.sleep(0.5)
+        await anyio.sleep(0.5)
 
     print("-done counting")
 
@@ -28,24 +28,25 @@ def some_blocking(*args, **kwargs):
     return "some result"
 
 
-# @attr.define()
+@attr.define()
 class AsyncService:
-    # _service_proxy: Callable = attr.field()
+    name: str = attr.field()
+    service_class: type = attr.field()
+    _service_proxy: Optional[Callable] = attr.field(default=None)
+    _lock: anyio.Lock = attr.field(factory=anyio.Lock)
 
-    # todo add logging
-    def __init__(self, name, service_class):
-        self.name = name
-        self.service_class = service_class
-        self._service_proxy: Optional[Callable] = None
-        self._lock = trio.Lock()
-
-    def __str__(self):
-        return f"{self.__class__.__name__}: {self.name}"
+    # def __str__(self):
+    #     return f"{self.__class__.__name__}: {self.name}"
 
     async def connect(self, timeout=None):
         logger.info(f"Waiting until service '{self.name}' is available.")
         service_waiter = partial(rospy.wait_for_service, self.name, timeout=timeout)
-        await trio.to_thread.run_sync(service_waiter)
+        try:
+            with anyio.fail_after(timeout):
+                await anyio.to_thread.run_sync(service_waiter, cancellable=True)
+        except TimeoutError:
+            logger.error(f"Timeout! Service '{self.name}' is not available!")
+            return
 
         logger.info(f"Service '{self.name}' is available, connecting proxy.")
         proxy = rospy.ServiceProxy(self.name, self.service_class)
@@ -72,7 +73,7 @@ class AsyncService:
 
         async with self._lock:
             proxy = partial(self.call_nowait, *args, **kwargs)
-            result = await trio.to_thread.run_sync(proxy)
+            result = await anyio.to_thread.run_sync(proxy)
             return result
 
 
@@ -89,5 +90,5 @@ if __name__ == '__main__':
             nursery.start_soon(navigate, "Another call")
 
         print("ALL DONE")
-
+    import trio
     trio.run(main)
