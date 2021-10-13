@@ -1,0 +1,27 @@
+path: "configs/aruco.launch"
+type: "xml"
+name: "aruco launch file"
+description: ""
+# additional info?
+# parent_service: "clover"
+
+options:
+    aruco_detect:
+        description: ""
+        tree_path: ["aruco_detect"]
+        type: "bool"
+        default: False
+
+    placement:
+        description: ""
+        tree_path: ["placement"]
+        type: "enum"
+        default: "floor"
+        items:
+            floor:
+                description: "On the floor"
+                # format may be extended to include some other fields
+            ceiling:
+                description: ""
+            unknown:
+                description: ""
