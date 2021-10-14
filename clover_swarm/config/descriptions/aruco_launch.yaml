@@ -8,13 +8,13 @@ description: ""
 options:
     aruco_detect:
         description: ""
-        tree_path: ["aruco_detect"]
+        tree_path: ["./arg[@name='aruco_detect']", "attrib", "default"]
         type: "bool"
         default: False
 
     placement:
         description: ""
-        tree_path: ["placement"]
+        tree_path: ["./arg[@name='placement']", "attrib", "default"]
         type: "enum"
         default: "floor"
         items:
