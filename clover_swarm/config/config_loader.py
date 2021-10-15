@@ -63,6 +63,28 @@ class BoolConfigOption(ConfigOption):
     # def validate(self, attribute, value):
     #     attr.validators.instance_of(str)(self, attribute, value)
 
+# fixme: Raises unclear errors
+@attr.define(kw_only=True, on_setattr=[attr.setters.convert, attr.setters.validate])
+class StrConfigOption(ConfigOption):
+    default: str = attr.field(default=False)
+    value: str = attr.field(init=False, default=value_factory,
+                             validator=attr.validators.instance_of(bool))
+
+    # @staticmethod
+    # @converter(value)
+    # def convert(value):
+    #     if not isinstance(value, str):
+    #         value = str(value)
+    #     return value
+    #
+    # @value.validator
+    # def validate(self, attribute, value):
+    #     # attr.validators.instance_of(str)(self, attribute, value)
+    #     if value is None:
+    #         raise ValueError
+    #     if value == "":
+    #         raise ValueError("Attribute must not be empty string!!!!")
+
 
 @attr.define(kw_only=True, on_setattr=[attr.setters.convert, attr.setters.validate])
 class NumericConfigOption(ConfigOption):
@@ -109,7 +131,7 @@ class ConfigOptionEnum(ConfigOption):
             item.name = key
 
 
-OPTION_TYPES = Union[ConfigOption, BoolConfigOption, ConfigOptionEnum]
+OPTION_TYPES = Union[ConfigOption, BoolConfigOption, ConfigOptionEnum, StrConfigOption]
 
 
 class ConfigTypes(enum.Enum):
@@ -177,6 +199,8 @@ if __name__ == '__main__':
         options_mapping = {
             "bool": BoolConfigOption,
             "enum": ConfigOptionEnum,
+            "float": NumericConfigOption,
+            "str": StrConfigOption
         }
 
         option_type = options_mapping.get(o["type"], ConfigOption)
@@ -204,5 +228,7 @@ if __name__ == '__main__':
 
     config.options["aruco_detect"].set(True)
     print(config.options["aruco_detect"].value)
+    print(config.options["length"].value)
+    # print(config.options["map"].value)
     # config.options["aruco_detect"].set("h")
 

@@ -12,6 +12,18 @@ options:
         type: "bool"
         default: False
 
+    aruco_map:
+        description: ""
+        tree_path: [ "./arg[@name='aruco_map']", "attrib", "default" ]
+        type: "bool"
+        default: False
+
+    aruco_vpe:
+        description: ""
+        tree_path: [ "./arg[@name='aruco_vpe']", "attrib", "default" ]
+        type: "bool"
+        default: False
+
     placement:
         description: ""
         tree_path: ["./arg[@name='placement']", "attrib", "default"]
@@ -25,3 +37,15 @@ options:
                 description: ""
             unknown:
                 description: ""
+
+    length:
+        description: ""
+        tree_path: [ "./arg[@name='length']", "attrib", "default" ]
+        type: "float"
+        default: 0.22
+
+    map:
+        description: ""
+        tree_path: [ "./arg[@name='map']", "attrib", "default" ]
+        type: "str"
+        default: "map.txt"

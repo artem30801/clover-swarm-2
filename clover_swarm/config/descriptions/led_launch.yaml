@@ -1,0 +1,39 @@
+path: "configs/aruco.launch"
+type: "xml"
+name: "aruco launch file"
+description: ""
+# additional info?
+# parent_service: "clover"
+
+options:
+    ws281x:
+        description: ""
+        tree_path: ["./arg[@name='ws281x']", "attrib", "default"]
+        type: "bool"
+        default: True
+
+    led_effect:
+        description: ""
+        tree_path: [ "./arg[@name='led_effect']", "attrib", "default" ]
+        type: "bool"
+        default: True
+
+    led_notify:
+        description: ""
+        tree_path: [ "./arg[@name='led_notify']", "attrib", "default" ]
+        type: "bool"
+        default: True
+
+#todo: Need class for integer values!!!!!!
+#    led_count:
+#        description: ""
+#        tree_path: [ "./arg[@name='led_count']", "attrib", "default" ]
+#        type: "int"
+#        default: 72
+#
+#    gpio_pin:
+#        description: ""
+#        tree_path: [ "./arg[@name='gpio_pin']", "attrib", "default" ]
+#        type: "int"
+#        default: 21
+

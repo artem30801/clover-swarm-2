@@ -1,0 +1,51 @@
+path: "configs/aruco.launch"
+type: "xml"
+name: "aruco launch file"
+description: ""
+# additional info?
+# parent_service: "clover"
+
+options:
+    main_camera:
+        description: ""
+        tree_path: ["./arg[@name='main_camera']", "attrib", "default"]
+        type: "bool"
+        default: True
+
+    optical_flow:
+        description: ""
+        tree_path: [ "./arg[@name='optical_flow']", "attrib", "default" ]
+        type: "bool"
+        default: True
+
+    aruco:
+        description: ""
+        tree_path: [ "./arg[@name='aruco']", "attrib", "default" ]
+        type: "bool"
+        default: False
+
+    rangefinder_vl53l1x:
+        description: ""
+        tree_path: [ "./arg[@name='rangefinder_vl53l1x']", "attrib", "default" ]
+        type: "bool"
+        default: True
+
+    led:
+        description: ""
+        tree_path: [ "./arg[@name='led']", "attrib", "default" ]
+        type: "bool"
+        default: True
+
+    blocks:
+        description: ""
+        tree_path: [ "./arg[@name='blocks']", "attrib", "default" ]
+        type: "bool"
+        default: False
+
+    rc:
+        description: ""
+        tree_path: [ "./arg[@name='rc']", "attrib", "default" ]
+        type: "bool"
+        default: False
+
+    # only useful configs was added

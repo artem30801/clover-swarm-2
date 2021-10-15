@@ -1,0 +1,29 @@
+path: "configs/aruco.launch"
+type: "xml"
+name: "aruco launch file"
+description: ""
+# additional info?
+# parent_service: "clover"
+
+options:
+    direction_z:
+        description: ""
+        tree_path: ["./arg[@name='direction_z']", "attrib", "default"]
+        type: "enum"
+        default: "down"
+        items:
+            down:
+                description: ""
+            up:
+                description: ""
+
+    direction_y:
+        description: ""
+        tree_path: [ "./arg[@name='direction_y']", "attrib", "default" ]
+        type: "enum"
+        default: "backward"
+        items:
+            backward:
+                description: ""
+            forward:
+                description: ""
