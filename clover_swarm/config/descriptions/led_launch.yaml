@@ -1,6 +1,6 @@
-path: "configs/aruco.launch"
+path: "configs/led.launch"
 type: "xml"
-name: "aruco launch file"
+name: "led launch file"
 description: ""
 # additional info?
 # parent_service: "clover"
