@@ -63,12 +63,13 @@ class BoolConfigOption(ConfigOption):
     # def validate(self, attribute, value):
     #     attr.validators.instance_of(str)(self, attribute, value)
 
+
 # fixme: Raises unclear errors
 @attr.define(kw_only=True, on_setattr=[attr.setters.convert, attr.setters.validate])
 class StrConfigOption(ConfigOption):
     default: str = attr.field(default=False)
     value: str = attr.field(init=False, default=value_factory,
-                             validator=attr.validators.instance_of(bool))
+                             validator=attr.validators.instance_of(str))
 
     # @staticmethod
     # @converter(value)
