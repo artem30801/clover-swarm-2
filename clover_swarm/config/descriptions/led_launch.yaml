@@ -25,15 +25,15 @@ options:
         default: True
 
 #todo: Need class for integer values!!!!!!
-#    led_count:
-#        description: ""
-#        tree_path: [ "./arg[@name='led_count']", "attrib", "default" ]
-#        type: "int"
-#        default: 72
-#
-#    gpio_pin:
-#        description: ""
-#        tree_path: [ "./arg[@name='gpio_pin']", "attrib", "default" ]
-#        type: "int"
-#        default: 21
+    led_count:
+        description: ""
+        tree_path: [ "./arg[@name='led_count']", "attrib", "default" ]
+        type: "int"
+        default: 72
+
+    gpio_pin:
+        description: ""
+        tree_path: [ "./arg[@name='gpio_pin']", "attrib", "default" ]
+        type: "int"
+        default: 21
 

@@ -89,19 +89,27 @@ class StrConfigOption(ConfigOption):
 
 @attr.define(kw_only=True, on_setattr=[attr.setters.convert, attr.setters.validate])
 class NumericConfigOption(ConfigOption):
-    allow_nan: bool = attr.field(default=True)
-    lt: Optional[float] = attr.field(default=None)
-    gt: Optional[float] = attr.field(default=None)
-    lte: Optional[float] = attr.field(default=None)
-    gte: Optional[float] = attr.field(default=None)
+    type = float
+    allow_nan: bool = attr.field(default=False)  # I think, it's good idea to prohibit nan by default
+    lt: Optional[type] = attr.field(default=None)
+    gt: Optional[type] = attr.field(default=None)
+    lte: Optional[type] = attr.field(default=None)
+    gte: Optional[type] = attr.field(default=None)
 
-    default: Optional[float] = attr.field(default=float("nan"))
-    value: float = attr.field(init=False, default=value_factory)
+    default: Optional[type] = attr.field(default=float("nan"))
+    value: type = attr.field(init=False, default=value_factory)
 
     @value.validator
     def validate(self, attribute, value):  # todo clear error messages
+        if not isinstance(value, self.type):
+            try:
+                value = self.type(value)
+            except ValueError:
+                raise TypeError(f"Argument {self.name} must have type of {self.type.__name__}, but got "
+                                f"{value.__repr__()}, type: {type(value).__name__}")
+
         if not self.allow_nan and math.isnan(value):
-            raise ValueError
+            raise ValueError(f"Argument {self.name} must not be nan!")
 
         if self.lt is not None and value >= self.lt:
             raise ValueError
@@ -114,6 +122,12 @@ class NumericConfigOption(ConfigOption):
 
         if self.gte is not None and value < self.gte:
             raise ValueError
+
+@attr.define(kw_only=True, on_setattr=[attr.setters.convert, attr.setters.validate])
+class IntConfigOption(NumericConfigOption):
+    type = int
+
+
 
 
 @attr.define(kw_only=True)
@@ -187,7 +201,7 @@ CONFIG_TYPES = Union[Config, XMLConfig]
 
 if __name__ == '__main__':
     import os
-    p = os.path.abspath('descriptions/aruco_launch.yaml')
+    p = os.path.abspath('descriptions/led_launch.yaml')
 
     with open(p) as f:
         aruco_descriptor = yaml.safe_load(f)
@@ -201,6 +215,7 @@ if __name__ == '__main__':
             "bool": BoolConfigOption,
             "enum": ConfigOptionEnum,
             "float": NumericConfigOption,
+            "int": IntConfigOption,
             "str": StrConfigOption
         }
 
@@ -225,11 +240,13 @@ if __name__ == '__main__':
 
     print(config)
 
-    config.load_config("configs/aruco.launch")
+    config.load_config("configs/led.launch")
 
-    config.options["aruco_detect"].set(True)
-    print(config.options["aruco_detect"].value)
-    print(config.options["length"].value)
+    # config.options["ws281x"].set(True)
+    print(config.options["led_count"].value)
+    config.options["led_count"].set(1.0)
+    print(config.options["led_count"].value)
+    print(type(config.options["led_count"].value))  # fixme: int value expected!!!!!
     # print(config.options["map"].value)
     # config.options["aruco_detect"].set("h")
 
