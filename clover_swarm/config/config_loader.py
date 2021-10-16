@@ -3,6 +3,7 @@ import attr
 import cattr
 from cattr.gen import make_dict_unstructure_fn, make_dict_structure_fn, override
 from cattr.preconf.pyyaml import make_converter
+from xml.etree import ElementTree
 
 import math
 import enum
@@ -21,10 +22,11 @@ def converter(attribute):
 
 @attr.define(kw_only=True, on_setattr=[attr.setters.convert, attr.setters.validate])
 class ConfigOption:
-    # config = attr.field(init=False, default=None)
+    # config: "Config" = attr.field(init=False, default=None)
+    # _export_ref: Optional[Any] = attr.field(init=False)
+
     name: str = attr.field(init=False, default=None)
     tree_path: List = attr.field(default=attr.Factory(lambda self: [self.name], takes_self=True))
-    # type: str = attr.field()
     default: Optional[Any] = attr.field(default=None)
     description: Optional[str] = attr.field(default=None)
 
@@ -34,10 +36,6 @@ class ConfigOption:
     def validate(self, attribute, value):
         if value is None:
             return
-
-        # if self.type == "bool":
-        #     if not isinstance(value, bool):
-        #         raise ValueError(f"NOT bool {value} {attribute}")
 
     def set(self, new_value):
         self.value = new_value
@@ -59,24 +57,14 @@ class BoolConfigOption(ConfigOption):
             value = bool(strtobool(value))
         return value
 
-    # @value.validator
-    # def validate(self, attribute, value):
-    #     attr.validators.instance_of(str)(self, attribute, value)
-
 
 # fixme: Raises unclear errors
 @attr.define(kw_only=True, on_setattr=[attr.setters.convert, attr.setters.validate])
 class StrConfigOption(ConfigOption):
     default: str = attr.field(default=False)
     value: str = attr.field(init=False, default=value_factory,
-                             validator=attr.validators.instance_of(str))
+                            validator=attr.validators.instance_of(str))
 
-    # @staticmethod
-    # @converter(value)
-    # def convert(value):
-    #     if not isinstance(value, str):
-    #         value = str(value)
-    #     return value
     #
     # @value.validator
     # def validate(self, attribute, value):
@@ -89,25 +77,18 @@ class StrConfigOption(ConfigOption):
 
 @attr.define(kw_only=True, on_setattr=[attr.setters.convert, attr.setters.validate])
 class NumericConfigOption(ConfigOption):
-    type = float
+    option_type = float
     allow_nan: bool = attr.field(default=False)  # I think, it's good idea to prohibit nan by default
-    lt: Optional[type] = attr.field(default=None)
-    gt: Optional[type] = attr.field(default=None)
-    lte: Optional[type] = attr.field(default=None)
-    gte: Optional[type] = attr.field(default=None)
+    lt: Optional[option_type] = attr.field(default=None)
+    gt: Optional[option_type] = attr.field(default=None)
+    lte: Optional[option_type] = attr.field(default=None)
+    gte: Optional[option_type] = attr.field(default=None)
 
-    default: Optional[type] = attr.field(default=float("nan"))
-    value: type = attr.field(init=False, default=value_factory)
+    default: Optional[option_type] = attr.field(default=float("nan"))
+    value: option_type = attr.field(init=False, default=value_factory, converter=option_type)
 
     @value.validator
     def validate(self, attribute, value):  # todo clear error messages
-        if not isinstance(value, self.type):
-            try:
-                value = self.type(value)
-            except ValueError:
-                raise TypeError(f"Argument {self.name} must have type of {self.type.__name__}, but got "
-                                f"{value.__repr__()}, type: {type(value).__name__}")
-
         if not self.allow_nan and math.isnan(value):
             raise ValueError(f"Argument {self.name} must not be nan!")
 
@@ -123,11 +104,12 @@ class NumericConfigOption(ConfigOption):
         if self.gte is not None and value < self.gte:
             raise ValueError
 
+
 @attr.define(kw_only=True, on_setattr=[attr.setters.convert, attr.setters.validate])
 class IntConfigOption(NumericConfigOption):
-    type = int
-
-
+    option_type = int
+    default: Optional[option_type] = attr.field(default=float("nan"))
+    value: option_type = attr.field(init=False, default=value_factory, converter=option_type)
 
 
 @attr.define(kw_only=True)
@@ -140,6 +122,12 @@ class EnumItem:
 class ConfigOptionEnum(ConfigOption):
     items: Dict[str, EnumItem] = attr.field(factory=dict)
     strict: bool = attr.field(default=True)
+
+    value: str = attr.field(init=False, default=value_factory)
+
+    # @value.validator
+    # def validate(self, attribute, value):
+
 
     def __attrs_post_init__(self):
         for key, item in self.items.items():
@@ -169,22 +157,27 @@ class Config:
             option.name = key
             # option.config = self
 
-    def load_config(self, filename):
+    def import_config(self, fd):
+        ...
+
+    def export_config(self, fd):
         ...
 
 
 @attr.define(kw_only=True)
 class XMLConfig(Config):
-    def load_config(self, filename):
-        import xml.etree.ElementTree as ET
+    tree: ElementTree = attr.field(init=False)
 
-        tree = ET.parse(filename)
-        root = tree.getroot()
+    # def _get_node(self, root):
+
+    def import_config(self, fd):
+        self.tree = ElementTree.parse(fd)
+        root = self.tree.getroot()
 
         for option in self.options.values():
             tree_path = option.tree_path[0]
             node = root.find(tree_path)
-            
+
             value_action = option.tree_path[1]
             if value_action == "attrib":
                 attrib_name = option.tree_path[2]
@@ -196,11 +189,31 @@ class XMLConfig(Config):
 
             option.set(value)
 
+    def export_config(self, fd):
+        root = self.tree.getroot()
+
+        for option in self.options.values():
+            tree_path = option.tree_path[0]
+            node = root.find(tree_path)
+
+            value = str(option.get())
+            value_action = option.tree_path[1]
+            if value_action == "attrib":
+                attrib_name = option.tree_path[2]
+                node.set(attrib_name, value)
+            elif value_action == "text":
+                node.text = value
+            else:
+                raise ValueError
+
+        self.tree.write(fd)  # todo preserve comments and formatting
+
 
 CONFIG_TYPES = Union[Config, XMLConfig]
 
 if __name__ == '__main__':
     import os
+    # p = os.path.abspath('descriptions/aruco_launch.yaml')
     p = os.path.abspath('descriptions/led_launch.yaml')
 
     with open(p) as f:
@@ -216,7 +229,7 @@ if __name__ == '__main__':
             "enum": ConfigOptionEnum,
             "float": NumericConfigOption,
             "int": IntConfigOption,
-            "str": StrConfigOption
+            "str": StrConfigOption,
         }
 
         option_type = options_mapping.get(o["type"], ConfigOption)
@@ -236,17 +249,27 @@ if __name__ == '__main__':
     converter.register_structure_hook(OPTION_TYPES, option_factory)
     converter.register_structure_hook(CONFIG_TYPES, config_factory)
 
+    def structure(cls):
+        overrides = {a.name: override(omit=True) for a in attr.fields(cls) if not a.init}
+        return make_dict_structure_fn(cls, converter, **overrides)
+
+
+    converter.register_structure_hook_factory(attr.has, structure)
+
     config = converter.structure(aruco_descriptor, CONFIG_TYPES)
 
-    print(config)
+    config.import_config(config.path)
 
-    config.load_config("configs/led.launch")
+    for option in config.options.values():
+        print(option.name, option.value, type(option.value))
 
-    # config.options["ws281x"].set(True)
-    print(config.options["led_count"].value)
-    config.options["led_count"].set(1.0)
-    print(config.options["led_count"].value)
-    print(type(config.options["led_count"].value))  # fixme: int value expected!!!!!
-    # print(config.options["map"].value)
-    # config.options["aruco_detect"].set("h")
+    # config.options["aruco_detect"].set(True)
+    # config.options["gpio_pin"].value = "1243"
+    # print(config.options["gpio_pin"].value)
+
+    # with open("configs/aruco_export.launch", "w") as f:
+    # config.export_config("configs/aruco_export.launch")
+
+
+# config.options["aruco_detect"].set("h")
 
