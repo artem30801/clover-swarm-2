@@ -43,6 +43,7 @@ options:
         tree_path: [ "./arg[@name='length']", "attrib", "default" ]
         type: "float"
         default: 0.22
+        gt: 0
 
     map:
         description: ""

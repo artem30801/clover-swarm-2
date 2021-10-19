@@ -88,21 +88,21 @@ class NumericConfigOption(ConfigOption):
     value: option_type = attr.field(init=False, default=value_factory, converter=option_type)
 
     @value.validator
-    def validate(self, attribute, value):  # todo clear error messages
+    def validate(self, attribute, value):
         if not self.allow_nan and math.isnan(value):
             raise ValueError(f"Argument {self.name} must not be nan!")
 
         if self.lt is not None and value >= self.lt:
-            raise ValueError
+            raise ValueError(f"Argument {self.name} must be less than {self.lt}, got {value}")
 
         if self.gt is not None and value <= self.gt:
-            raise ValueError
+            raise ValueError(f"Argument {self.name} must be greater than {self.gt}, got {value}")
 
         if self.lte is not None and value > self.lte:
-            raise ValueError
+            raise ValueError(f"Argument {self.name} must be less or equal to {self.lte}, got {value}")
 
         if self.gte is not None and value < self.gte:
-            raise ValueError
+            raise ValueError(f"Argument {self.name} must be greater or equal to{self.qte}, got {value}")
 
 
 @attr.define(kw_only=True, on_setattr=[attr.setters.convert, attr.setters.validate])
@@ -214,7 +214,7 @@ CONFIG_TYPES = Union[Config, XMLConfig]
 if __name__ == '__main__':
     import os
     # p = os.path.abspath('descriptions/aruco_launch.yaml')
-    p = os.path.abspath('descriptions/led_launch.yaml')
+    p = os.path.abspath('descriptions/aruco_launch.yaml')
 
     with open(p) as f:
         aruco_descriptor = yaml.safe_load(f)
@@ -263,7 +263,9 @@ if __name__ == '__main__':
     for option in config.options.values():
         print(option.name, option.value, type(option.value))
 
-    # config.options["aruco_detect"].set(True)
+    config.options["length"].set(1)
+    for option in config.options.values():
+        print(option.name, option.value, type(option.value))
     # config.options["gpio_pin"].value = "1243"
     # print(config.options["gpio_pin"].value)
 
