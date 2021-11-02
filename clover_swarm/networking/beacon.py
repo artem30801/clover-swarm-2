@@ -117,7 +117,13 @@ class Beacon:
         message, (addr, port) = await self._socket.receive()
         logger.debug(f"{self} received broadcast message {message} from {addr}:{port}")
         await self.on_receive.emit(message, addr=addr, port=port)
-        data = self.decode_message(message)
+
+        try:
+            data = self.decode_message(message)
+        except Exception as e:
+            logger.warning(f"Error during decoding beacon message {message}: {e}")
+            return
+
         await self.on_message.emit(data, addr=addr, port=port)
         return data, addr, port
 
