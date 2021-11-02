@@ -169,23 +169,23 @@ class AgentBeacon(Beacon):
         return uuid.UUID(bytes=peer_uuid), peer_port
 
     async def _receive_beacon(self):
-        data, addr, port = await super()._receive_beacon()
+        data, host, port = await super()._receive_beacon()
         peer_uuid, peer_port = data
-        await self._process_peer(peer_uuid, addr, peer_port)
+        await self._process_peer(peer_uuid, host, peer_port)
 
-    async def _process_peer(self, peer_uuid, peer_addr, peer_port):
+    async def _process_peer(self, peer_uuid, peer_host, peer_port):
         if peer_uuid == self.agent.uuid:
             return
 
-        await self.on_peer.emit(peer_uuid, peer_addr, peer_port)
-        logger.info(f"{self} detected new peer {peer_uuid} at {peer_addr}:{peer_port}")
+        await self.on_peer.emit(peer_uuid, peer_host, peer_port)
+        logger.debug(f"{self} detected peer {peer_uuid} at {peer_host}:{peer_port}")
 
 
 if __name__ == '__main__':
     async def main():
         beacon = MessageBeacon(message="Hello world")
         await beacon.start()
-        await anyio.sleep(3)
+        await anyio.sleep(30)
         await beacon.stop()
 
     logging.basicConfig(level=logging.DEBUG)
