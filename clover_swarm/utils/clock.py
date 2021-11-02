@@ -1,8 +1,10 @@
 import attr
 import time
 import anyio
-
+import logging
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 @attr.define()
@@ -23,6 +25,8 @@ class Clock:
             diff = min(end_time - self.time, max_sleep)
             if diff <= 0:
                 break
+            # elif diff <= 0.05:
+            #     await anyio.sleep(diff)
             else:
                 await anyio.sleep(diff / 2)
 
@@ -46,6 +50,7 @@ class Rate:
             delay = 1 / rate
 
         self.__attrs_init__(delay=delay, clock=clock)
+        self.reset()
 
     @property
     def rate(self):
@@ -62,8 +67,14 @@ class Rate:
         if self._last_call is None:
             self.reset()
 
-        await self._clock.sleep_until(self._last_call + self.delay)
         self._last_call += self.delay
+        if (delta := self._last_call - self._clock.time) <= 0:
+            delta = abs(delta)
+            logger.warning(f"Rate is behind the schedule by {delta} seconds, skipping sleep")
+            # self._last_call += delta
+            return
+
+        await self._clock.sleep_until(self._last_call)
 
     async def __call__(self):
         await self.sleep()
