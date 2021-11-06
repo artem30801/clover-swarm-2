@@ -1,18 +1,22 @@
 import attr
-from typing import List, Callable
+from typing import Set, Callable
 import logging
 
 import asyncio
+from functools import partial
+
+
+from clover_swarm.utils.task_group import GatherTaskGroup
 
 logger = logging.getLogger(__name__)
 
 
 @attr.define()
 class Signal:
-    _callbacks: List[Callable] = attr.field(factory=list)
+    _callbacks: Set[Callable] = attr.field(factory=list)
 
     def connect(self, func):
-        self._callbacks.append(func)
+        self._callbacks.add(func)
 
     def disconnect(self, func):
         self._callbacks.remove(func)
@@ -22,13 +26,19 @@ class Signal:
         return self._callbacks.copy()
 
     async def emit(self, *args, **kwargs):
-        results = []
-        for func in self._callbacks:
-            try:
+        results = list()
+        async with GatherTaskGroup() as task_group:
+            for func in self._callbacks:
+                func = partial(func, *args, **kwargs)
                 if asyncio.iscoroutinefunction(func):
-                    result = await func(*args, **kwargs)
+                    task_group.start_soon(func)
                 else:
-                    result = func(*args, **kwargs)
+                    results.append(func())
+
+        # at this point all tasks are done
+        for future in task_group.results:
+            try:
+                result = future.result()
             except Exception as e:
                 logger.warning(f"Error during signal callback execution {func}: {e}")
                 result = e
