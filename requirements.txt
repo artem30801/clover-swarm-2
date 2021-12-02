@@ -1,0 +1,10 @@
+anyio~=3.3.4
+
+attrs~=21.2.0
+
+dynaconf~=3.1.7
+msgpack~=1.0.2
+
+psutil~=5.8.0
+PyYAML~=5.4.1
+pyzmq~=22.3.0
