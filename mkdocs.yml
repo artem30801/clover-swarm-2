@@ -1,1 +1,24 @@
 site_name: CloverSwarm
+repo_url: https://github.com/artem30801/clover-swarm-2
+repo_name: artem30801/clover-swarm-2
+copyright: Copyright &copy; 2021 - 2021 Artem Vasiunik
+docs_dir: docs/src
+edit_uri: edit/master/docs/src
+
+theme:
+  name: material
+
+  features:
+    - header.autohide
+    - navigation.instant
+    - navigation.top
+    - navigation.tabs
+    - search.suggest
+    - search.share
+
+  icon:
+    repo: fontawesome/brands/github-alt
+    logo: material/book
+
+plugins:
+  - search
