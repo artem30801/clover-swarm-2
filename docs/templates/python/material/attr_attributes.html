@@ -10,7 +10,7 @@
   </thead>
   <tbody>
     {% for attribute in attributes %}
-      {% if 'attrs-field' in attribute.properties %}
+      {% if 'attrs-field' in attribute.properties and (config.show_if_no_docstring or attribute.has_contents) %}
       <tr>
         <td><code>{{ attribute.name }}</code></td>
           <td>{% if attribute.type %}<code>{{ attribute.type }}</code>{% endif %}</td>
