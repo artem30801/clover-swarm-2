@@ -1,21 +1,21 @@
+import asyncio
+import ipaddress
 import logging
 import socket
 import struct
 import uuid
-
-import asyncio
-import anyio
-from anyio.abc import SocketAttribute
-import attr
-
-from clover_swarm.utils.clock import Clock, Rate
-from clover_swarm.utils.callback_signal import Signal
-from clover_swarm.networking.utils import create_broadcast_socket
-
 from abc import ABC
-from types import TracebackType
-from typing import TYPE_CHECKING, Optional, Tuple, Type, Any
 from contextlib import AsyncExitStack
+from types import TracebackType
+from typing import TYPE_CHECKING, Any, Optional, Tuple, Type
+
+import anyio
+import attr
+from anyio.abc import SocketAttribute
+
+from clover_swarm.networking.utils import create_broadcast_socket, get_active_interface
+from clover_swarm.utils.callback_signal import Signal
+from clover_swarm.utils.clock import Clock, Rate
 
 if TYPE_CHECKING:
     from clover_swarm.networking.agent import Agent
@@ -28,7 +28,8 @@ logger = logging.getLogger(__name__)
 class Beacon(ABC):
     # config
     port: int = attr.field(default=19700)
-    addr: str = attr.field(default="255.255.255.255")
+    interface: ipaddress.IPv4Interface = attr.field(default=None)
+
     send_interval: float = attr.field(default=5)
     send: bool = attr.field(default=True)
     listen: bool = attr.field(default=True)
@@ -58,13 +59,18 @@ class Beacon(ABC):
 
     async def __aenter__(self):
         if self.running:
-            raise RuntimeError("Beacon already running")
+            raise RuntimeError("Beacon is already running")
+
+        if self.interface is None:
+            self.interface = await get_active_interface()
 
         logger.debug(f"{self} starting on {self.addr}:{self.port}")
 
-        # todo think about replacing 0.0.0.0 with looping over all interfaces
         self._stopped = asyncio.Future()
-        self._socket = await create_broadcast_socket(socket.AF_INET, local_port=self.port, reuse_addr=True)
+        self._socket = await create_broadcast_socket(
+            local_port=self.port, local_host=self.addr,
+            family=socket.AF_INET, reuse_addr=True,
+        )
         self._task_group = anyio.create_task_group()
 
         async with AsyncExitStack() as stack:
@@ -80,9 +86,12 @@ class Beacon(ABC):
 
         self.running = True
 
-    async def __aexit__(self, exc_type: Optional[Type[BaseException]],
-                        exc_val: Optional[BaseException],
-                        exc_tb: Optional[TracebackType]) -> Optional[bool]:
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> Optional[bool]:
         logger.debug(f"{self} stopping")
         self.stop_nowait()
         result = await self._stack.__aexit__(exc_type, exc_val, exc_tb)
@@ -107,6 +116,10 @@ class Beacon(ABC):
 
         return asyncio.gather(*self._running_tasks, return_exceptions=True)
 
+    @property
+    def addr(self) -> str:
+        return str(self.interface.network.broadcast_address)
+
     async def _start_sender(self):
         logger.info(f"{self} sender starting with interval {self.send_interval}")
         rate = self._clock.make_rate(delay=self.send_interval)
@@ -122,7 +135,9 @@ class Beacon(ABC):
     async def _send_beacon(self):
         message = self.encode_message()
         await self._socket.sendto(message, self.addr, self.port)
-        logger.debug(f"{self} sent broadcast message {message} to {self.addr}:{self.port}")
+        logger.debug(
+            f"{self} sent broadcast message {message} to {self.addr}:{self.port}"
+        )
         self._task_group.start_soon(self.on_send.emit, message)
         return message
 
@@ -169,7 +184,9 @@ class AgentBeacon(Beacon):
 
     version: int = attr.field(default=1, repr=False)  # unsigned short
     prefix: bytes = attr.field(default=b"CS", repr=False)  # Clover Swarm
-    struct_format: str = attr.field(default=">2sH16sH", repr=False)  # 2 identifier bytes, 16 UUID bytes, unsigned short (port)
+    struct_format: str = attr.field(
+        default=">2sH16sH", repr=False
+    )  # 2 identifier bytes, 16 UUID bytes, unsigned short (port)
     # message_len: int = attr.field(default=32, repr=False)
 
     def encode_message(self) -> bytes:
@@ -183,7 +200,9 @@ class AgentBeacon(Beacon):
         return packed
 
     def decode_message(self, message: bytes) -> Tuple["uuid.UUID", int]:
-        prefix, version, peer_uuid, peer_port = struct.unpack(self.struct_format, message)
+        prefix, version, peer_uuid, peer_port = struct.unpack(
+            self.struct_format, message
+        )
         if prefix != self.prefix or version != self.version:
             raise ValueError
 
@@ -207,7 +226,8 @@ class AgentBeacon(Beacon):
         logger.debug(f"{self} detected peer {peer_uuid} at {peer_host}:{peer_port}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+
     async def main():
         beacon = MessageBeacon(message="Hello world")
         # await beacon.start()
@@ -219,5 +239,3 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
 
     asyncio.run(main())
-    # asyncio.get_event_loop().run_until_complete(main())
-
