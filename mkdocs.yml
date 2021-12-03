@@ -28,6 +28,10 @@ plugins:
       enable_inventory: true
       handlers:
         python:
+          import:
+            - https://docs.python.org/3.9/objects.inv
+            - https://anyio.readthedocs.io/en/stable/objects.inv
+            - https://pyzmq.readthedocs.io/en/latest/objects.inv
           selection:
             inherited_members: true
             filters:
@@ -36,7 +40,9 @@ plugins:
             members_order: source
             show_bases: True
             show_root_toc_entry: False
-#            group_by_category: False
+            show_category_heading: True
+            show_signature_annotations: False
+            show_if_no_docstring: True # temporary, this will be reverted to False once docs are done
             heading_level: 2
       watch:
         - clover_swarm
