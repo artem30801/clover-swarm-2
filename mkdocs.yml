@@ -63,5 +63,5 @@ markdown_extensions:
       emoji_generator: !!python/name:materialx.emoji.to_svg
   - toc:  # table of contents
       permalink: true
-      toc_depth: 2
+      toc_depth: 3
 #    - def_list

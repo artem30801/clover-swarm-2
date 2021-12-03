@@ -1,3 +1,4 @@
 mkdocs-autorefs
 mkdocs-material
+git+https://github.com/LordOfPolls/pytkdocs.git  # fork of pytkdocs with attr support
 mkdocstrings
