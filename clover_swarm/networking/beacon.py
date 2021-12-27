@@ -68,8 +68,10 @@ class Beacon(ABC):
 
         self._stopped = asyncio.Future()
         self._socket = await create_broadcast_socket(
-            local_port=self.port, local_host=self.addr,
-            family=socket.AF_INET, reuse_addr=True,
+            local_port=self.port,
+            local_host=self.addr,
+            family=socket.AF_INET,
+            reuse_addr=True,
         )
         self._task_group = anyio.create_task_group()
 
@@ -135,9 +137,7 @@ class Beacon(ABC):
     async def _send_beacon(self):
         message = self.encode_message()
         await self._socket.sendto(message, self.addr, self.port)
-        logger.debug(
-            f"{self} sent broadcast message {message} to {self.addr}:{self.port}"
-        )
+        logger.debug(f"{self} sent broadcast message {message} to {self.addr}:{self.port}")
         self._task_group.start_soon(self.on_send.emit, message)
         return message
 
@@ -200,9 +200,7 @@ class AgentBeacon(Beacon):
         return packed
 
     def decode_message(self, message: bytes) -> Tuple["uuid.UUID", int]:
-        prefix, version, peer_uuid, peer_port = struct.unpack(
-            self.struct_format, message
-        )
+        prefix, version, peer_uuid, peer_port = struct.unpack(self.struct_format, message)
         if prefix != self.prefix or version != self.version:
             raise ValueError
 

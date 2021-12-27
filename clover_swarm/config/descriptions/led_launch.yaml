@@ -36,4 +36,3 @@ options:
         tree_path: [ "./arg[@name='gpio_pin']", "attrib", "default" ]
         type: "int"
         default: 21
-

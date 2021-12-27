@@ -1,8 +1,9 @@
-import attr
-import time
-import anyio
 import logging
+import time
 from typing import Optional
+
+import anyio
+import attr
 
 logger = logging.getLogger(__name__)
 

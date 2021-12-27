@@ -1,12 +1,11 @@
-import anyio
-import rospy
-
 import logging
-import attr
-from functools import partial
-from typing import Optional, Callable
-
 import time
+from functools import partial
+from typing import Callable, Optional
+
+import anyio
+import attr
+import rospy
 
 logger = logging.getLogger(__name__)
 
@@ -67,8 +66,10 @@ class AsyncService:
 
     async def __call__(self, *args, **kwargs):
         if self._service_proxy is None:
-            logger.warning(f"Service {self.name} was not connected previously, connecting now. "
-                           f"Use AsyncService.connect() to connect service proxy preemptively.")
+            logger.warning(
+                f"Service {self.name} was not connected previously, connecting now. "
+                f"Use AsyncService.connect() to connect service proxy preemptively."
+            )
             await self.connect()
 
         async with self._lock:
@@ -77,9 +78,9 @@ class AsyncService:
             return result
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.CRITICAL)
-    
+
     async def main():
         navigate = AsyncService("124", "SOME CLASS OBJ")
 
@@ -90,5 +91,7 @@ if __name__ == '__main__':
             nursery.start_soon(navigate, "Another call")
 
         print("ALL DONE")
+
     import trio
+
     trio.run(main)

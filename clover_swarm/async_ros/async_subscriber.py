@@ -1,11 +1,11 @@
-import anyio
 # import rospy
 import logging
-
-from functools import partial
 from collections import AsyncIterable
-from typing import Optional, Callable
 from contextlib import suppress
+from functools import partial
+from typing import Callable, Optional
+
+import anyio
 
 from clover_swarm.async_ros.errors import TopicError
 
@@ -40,7 +40,10 @@ class AsyncSubscriber(AsyncIterable):
             await trio.to_thread.run_sync(service_waiter)
         logger.info(f"Service '{self.name}' is available, subscribing.")
 
-        self._subscriber = rospy.Subscriber(self.name, self.service_class, )  # todo queue size
+        self._subscriber = rospy.Subscriber(
+            self.name,
+            self.service_class,
+        )  # todo queue size
 
     def unsubscribe(self):
         if self._subscriber is None:
@@ -84,9 +87,8 @@ class AsyncSubscriber(AsyncIterable):
     #     return data
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.CRITICAL)
-
 
     async def main():
         rangefinder = AsyncSubscriber("124", "SOME CLASS OBJ")
@@ -104,8 +106,6 @@ if __name__ == '__main__':
         #     nursery.start_soon(camera)
         #     nursery.start_soon(flight)
 
-
         print("ALL DONE")
-
 
     trio.run(main)

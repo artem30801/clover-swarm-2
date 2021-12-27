@@ -1,14 +1,14 @@
-import yaml
-import attr
-import cattr
-from cattr.gen import make_dict_unstructure_fn, make_dict_structure_fn, override
-from cattr.preconf.pyyaml import make_converter
+import enum
+import math
+from distutils.util import strtobool
+from typing import Any, Dict, List, Optional, Union
 from xml.etree import ElementTree
 
-import math
-import enum
-from typing import List, Dict, Optional, Any, Union
-from distutils.util import strtobool
+import attr
+import cattr
+import yaml
+from cattr.gen import make_dict_structure_fn, make_dict_unstructure_fn, override
+from cattr.preconf.pyyaml import make_converter
 
 value_factory = attr.Factory(lambda self: self.default, takes_self=True)
 
@@ -17,6 +17,7 @@ def converter(attribute):
     def decorator(func):
         attribute.converter = func
         return func
+
     return decorator
 
 
@@ -47,8 +48,7 @@ class Option:
 @attr.define(kw_only=True, on_setattr=[attr.setters.convert, attr.setters.validate])
 class BoolOption(Option):
     default: bool = attr.field(default=False)
-    value: bool = attr.field(init=False, default=value_factory,
-                             validator=attr.validators.instance_of(bool))
+    value: bool = attr.field(init=False, default=value_factory, validator=attr.validators.instance_of(bool))
 
     @staticmethod
     @converter(value)
@@ -62,8 +62,7 @@ class BoolOption(Option):
 @attr.define(kw_only=True, on_setattr=[attr.setters.convert, attr.setters.validate])
 class StrOption(Option):
     default: str = attr.field(default=False)
-    value: str = attr.field(init=False, default=value_factory,
-                            validator=attr.validators.instance_of(str))
+    value: str = attr.field(init=False, default=value_factory, validator=attr.validators.instance_of(str))
 
     #
     # @value.validator
@@ -284,9 +283,10 @@ class ConfigCollection:
         pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import os
-    p = os.path.abspath('descriptions/aruco_launch.yaml')
+
+    p = os.path.abspath("descriptions/aruco_launch.yaml")
     # p = os.path.abspath('descriptions/led_launch.yaml')
 
     collection = ConfigCollection()
