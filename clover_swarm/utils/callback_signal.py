@@ -1,10 +1,9 @@
-import attr
-from typing import Set, Callable
-import logging
-
 import asyncio
+import logging
 from functools import partial
+from typing import Callable, Set
 
+import attr
 
 from clover_swarm.utils.task_group import GatherTaskGroup
 

@@ -1,10 +1,10 @@
-import anyio
-import anyio.abc
 import asyncio
-import attr
-
 from types import TracebackType
 from typing import List, Optional, Type
+
+import anyio
+import anyio.abc
+import attr
 
 
 @attr.define()
@@ -16,9 +16,9 @@ class GatherTaskGroup:
         await self._task_group.__aenter__()
         return self
 
-    async def __aexit__(self, exc_type: Optional[Type[BaseException]],
-                        exc_val: Optional[BaseException],
-                        exc_tb: Optional[TracebackType]) -> Optional[bool]:
+    async def __aexit__(
+        self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[TracebackType]
+    ) -> Optional[bool]:
         result = await self._task_group.__aexit__(exc_type, exc_val, exc_tb)
 
         for future in self._results:
@@ -81,11 +81,11 @@ class GatherTaskGroup:
 
 
 if __name__ == "__main__":
-    async def test():
 
+    async def test():
         async def s(x):
             await anyio.sleep(x)
-            return 3*x
+            return 3 * x
 
         async with GatherTaskGroup() as rg:
             a = rg.start_soon(s, 0.125)
@@ -96,6 +96,5 @@ if __name__ == "__main__":
 
         print(rg.results)
         assert rg.get_results() == [0.375, 0.75]
-
 
     anyio.run(test)

@@ -44,9 +44,7 @@ async def create_broadcast_socket(
 
     sock.bind((local_host, local_port))
 
-    result = await get_running_loop().create_datagram_endpoint(
-        DatagramProtocol, sock=sock
-    )
+    result = await get_running_loop().create_datagram_endpoint(DatagramProtocol, sock=sock)
 
     transport = cast(asyncio.DatagramTransport, result[0])
     protocol = cast(DatagramProtocol, result[1])
@@ -117,9 +115,7 @@ def get_interface_stats():
     addresses = psutil.net_if_addrs()
     stats = psutil.net_if_stats()
 
-    interface_stats = {
-        interface: (addrs, stats[interface]) for interface, addrs in addresses.items()
-    }
+    interface_stats = {interface: (addrs, stats[interface]) for interface, addrs in addresses.items()}
     return interface_stats
 
 
@@ -138,11 +134,7 @@ def interface_is_active(interface, interface_stats=None):
 
 def get_active_interfaces(interface_stats=None):
     interface_stats = interface_stats or get_interface_stats()
-    return [
-        interface
-        for interface in interface_stats.keys()
-        if interface_is_active(interface, interface_stats)
-    ]
+    return [interface for interface in interface_stats.keys() if interface_is_active(interface, interface_stats)]
 
 
 if __name__ == "__main__":

@@ -8,18 +8,59 @@
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-    QMetaObject, QObject, QPoint, QRect,
-    QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-    QFont, QFontDatabase, QGradient, QIcon,
-    QImage, QKeySequence, QLinearGradient, QPainter,
-    QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QAbstractItemView, QApplication, QDockWidget, QGridLayout,
-    QHBoxLayout, QHeaderView, QLabel, QMainWindow,
-    QMenuBar, QPushButton, QSizePolicy, QStatusBar,
-    QTabWidget, QTableWidget, QTableWidgetItem, QToolBox,
-    QVBoxLayout, QWidget)
+from PySide6.QtCore import (
+    QCoreApplication,
+    QDate,
+    QDateTime,
+    QLocale,
+    QMetaObject,
+    QObject,
+    QPoint,
+    QRect,
+    QSize,
+    Qt,
+    QTime,
+    QUrl,
+)
+from PySide6.QtGui import (
+    QBrush,
+    QColor,
+    QConicalGradient,
+    QCursor,
+    QFont,
+    QFontDatabase,
+    QGradient,
+    QIcon,
+    QImage,
+    QKeySequence,
+    QLinearGradient,
+    QPainter,
+    QPalette,
+    QPixmap,
+    QRadialGradient,
+    QTransform,
+)
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QApplication,
+    QDockWidget,
+    QGridLayout,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QMainWindow,
+    QMenuBar,
+    QPushButton,
+    QSizePolicy,
+    QStatusBar,
+    QTableWidget,
+    QTableWidgetItem,
+    QTabWidget,
+    QToolBox,
+    QVBoxLayout,
+    QWidget,
+)
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -44,9 +85,9 @@ class Ui_MainWindow(object):
         self.horizontalLayout = QHBoxLayout(self.tab)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.tableWidget = QTableWidget(self.tab)
-        if (self.tableWidget.columnCount() < 5):
+        if self.tableWidget.columnCount() < 5:
             self.tableWidget.setColumnCount(5)
-        if (self.tableWidget.rowCount() < 11):
+        if self.tableWidget.rowCount() < 11:
             self.tableWidget.setRowCount(11)
         self.tableWidget.setObjectName(u"tableWidget")
         self.tableWidget.setSelectionMode(QAbstractItemView.ContiguousSelection)
@@ -132,21 +173,31 @@ class Ui_MainWindow(object):
         self.tabWidget.setCurrentIndex(0)
         self.toolBox.setCurrentIndex(0)
 
-
         QMetaObject.connectSlotsByName(MainWindow)
+
     # setupUi
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), QCoreApplication.translate("MainWindow", u"Main", None))
+        self.tabWidget.setTabText(
+            self.tabWidget.indexOf(self.tab), QCoreApplication.translate("MainWindow", u"Main", None)
+        )
         self.pushButton_2.setText(QCoreApplication.translate("MainWindow", u"-X", None))
         self.pushButton.setText(QCoreApplication.translate("MainWindow", u"+X", None))
         self.pushButton_4.setText(QCoreApplication.translate("MainWindow", u"-Y", None))
         self.pushButton_3.setText(QCoreApplication.translate("MainWindow", u"+Y", None))
         self.label.setText(QCoreApplication.translate("MainWindow", u"Drone control", None))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), QCoreApplication.translate("MainWindow", u"Flight control", None))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), QCoreApplication.translate("MainWindow", u"Setup", None))
-        self.toolBox.setItemText(self.toolBox.indexOf(self.page), QCoreApplication.translate("MainWindow", u"Page 1", None))
-        self.toolBox.setItemText(self.toolBox.indexOf(self.page_2), QCoreApplication.translate("MainWindow", u"Page 2", None))
-    # retranslateUi
+        self.tabWidget.setTabText(
+            self.tabWidget.indexOf(self.tab_2), QCoreApplication.translate("MainWindow", u"Flight control", None)
+        )
+        self.tabWidget.setTabText(
+            self.tabWidget.indexOf(self.tab_3), QCoreApplication.translate("MainWindow", u"Setup", None)
+        )
+        self.toolBox.setItemText(
+            self.toolBox.indexOf(self.page), QCoreApplication.translate("MainWindow", u"Page 1", None)
+        )
+        self.toolBox.setItemText(
+            self.toolBox.indexOf(self.page_2), QCoreApplication.translate("MainWindow", u"Page 2", None)
+        )
 
+    # retranslateUi
