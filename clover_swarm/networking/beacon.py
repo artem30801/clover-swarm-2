@@ -90,7 +90,6 @@ class Beacon(ABC):
         self._stopped = asyncio.Future()
         self._socket = await create_broadcast_socket(
             local_port=self.port,
-            local_host=self.addr,
             family=socket.AF_INET,
             reuse_addr=True,
         )
