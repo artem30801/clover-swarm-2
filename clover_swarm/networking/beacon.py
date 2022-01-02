@@ -7,13 +7,14 @@ import uuid
 from abc import ABC
 from contextlib import AsyncExitStack
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, NoReturn, Optional, Tuple, Type
 
 import anyio
 import attr
 from anyio.abc import SocketAttribute
 
 from clover_swarm.networking.utils import create_broadcast_socket, get_active_interface
+from clover_swarm.utils.attr_utils import add_docs
 from clover_swarm.utils.callback_signal import Signal
 from clover_swarm.utils.clock import Clock, Rate
 
@@ -26,18 +27,38 @@ logger = logging.getLogger(__name__)
 
 @attr.define(kw_only=True)
 class Beacon(ABC):
+    """
+    Base abstract class for beacons: UDP broadcast autodiscovery and message transmission objects
+    """
+
     # config
     port: int = attr.field(default=19700)
+    add_docs(port, "Port used for broadcast sending and receiving")
+
     interface: ipaddress.IPv4Interface = attr.field(default=None)
+    add_docs(interface, "Interface used for broadcast sending and receiving")
 
     send_interval: float = attr.field(default=5)
+    add_docs(send_interval, "Interval between sending broadcast messages (in seconds)")
+
     send: bool = attr.field(default=True)
+    add_docs(send, "Whether to send broadcast messages")
+
     listen: bool = attr.field(default=True)
+    add_docs(listen, "Whether to listen for broadcast messages")
 
     # public runtime attributes
-    running: bool = attr.field(default=False, init=False, repr=False)
+    running: bool = attr.field(
+        default=False,
+        init=False,
+        repr=False,
+    )
+    add_docs(running, "Indicates whether this beacon is currently running")
 
     # public signals
+
+    # TODO USE event dispatcher obj
+
     on_message: Signal = attr.field(factory=Signal, repr=False)
     on_receive: Signal = attr.field(factory=Signal, repr=False)
     on_send: Signal = attr.field(factory=Signal, repr=False)
@@ -178,7 +199,8 @@ class MessageBeacon(Beacon):
 
 @attr.define(kw_only=True)
 class AgentBeacon(Beacon):
-    agent: "Agent" = attr.field()
+    agent: "Agent" = attr.field(repr=False)
+    add_docs(agent, "Agent associated with the beacon")
 
     on_peer: Signal = attr.field(factory=Signal, repr=False)
 
