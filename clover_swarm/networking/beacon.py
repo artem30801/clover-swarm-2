@@ -114,8 +114,7 @@ class Beacon(ABC):
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> Optional[bool]:
-        logger.debug(f"{self} stopping")
-        self.stop_nowait()
+        self.cancel()
         result = await self._stack.__aexit__(exc_type, exc_val, exc_tb)
         self.running = False
         self._stopped.set_result(True)  # todo set exception?
@@ -129,10 +128,11 @@ class Beacon(ABC):
         return await self.__aexit__(None, None, None)
 
     def cancel(self):
+        logger.debug(f"{self} stopping")
         self._task_group.cancel_scope.cancel()
 
     @property
-    def stopped(self):
+    def stopped(self):  # TODO
         if not self.running:
             raise RuntimeError("Beacon is not running yet!")
 
@@ -249,12 +249,11 @@ if __name__ == "__main__":
 
     async def main():
         beacon = MessageBeacon(message="Hello world")
-        # await beacon.start()
-        # await anyio.sleep(10)
-        # await beacon.stop()
+        await beacon.start()
+        await anyio.sleep(10)
+        await beacon.stop()
         async with beacon:
             await anyio.sleep(10)
 
     logging.basicConfig(level=logging.DEBUG)
-
     asyncio.run(main())
