@@ -114,7 +114,6 @@ class Beacon(ABC):
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> Optional[bool]:
-        self.cancel()
         result = await self._stack.__aexit__(exc_type, exc_val, exc_tb)
         self.running = False
         self._stopped.set_result(True)  # todo set exception?
@@ -125,6 +124,7 @@ class Beacon(ABC):
         return await self.__aenter__()
 
     async def stop(self):
+        self.cancel()
         return await self.__aexit__(None, None, None)
 
     def cancel(self):
@@ -157,7 +157,9 @@ class Beacon(ABC):
     async def _send_beacon(self):
         message = self.encode_message()
         await self._socket.sendto(message, self.addr, self.port)
-        logger.debug(f"{self} sent broadcast message {message} to {self.addr}:{self.port}")
+        logger.debug(
+            f"{self} sent broadcast message {message} to {self.addr}:{self.port}"
+        )
         self._task_group.start_soon(self.on_send.emit, message)
         return message
 
@@ -221,7 +223,9 @@ class AgentBeacon(Beacon):
         return packed
 
     def decode_message(self, message: bytes) -> Tuple["uuid.UUID", int]:
-        prefix, version, peer_uuid, peer_port = struct.unpack(self.struct_format, message)
+        prefix, version, peer_uuid, peer_port = struct.unpack(
+            self.struct_format, message
+        )
         if prefix != self.prefix or version != self.version:
             raise ValueError
 
