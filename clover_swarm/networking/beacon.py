@@ -6,13 +6,14 @@ import struct
 import uuid
 from abc import ABC
 from contextlib import AsyncExitStack
-from types import TracebackType
-from typing import TYPE_CHECKING, Any, NoReturn, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, NoReturn, Optional, Tuple
+from uuid import UUID
 
 import anyio
 import attr
-from anyio.abc import SocketAttribute
+from anyio.abc import UDPSocket
 
+from clover_swarm.networking.service import Service
 from clover_swarm.networking.utils import create_broadcast_socket, get_active_interface
 from clover_swarm.utils.attr_utils import add_docs
 from clover_swarm.utils.callback_signal import Signal
@@ -26,10 +27,8 @@ logger = logging.getLogger(__name__)
 
 
 @attr.define(kw_only=True)
-class Beacon(ABC):
-    """
-    Base abstract class for beacons: UDP broadcast autodiscovery and message transmission objects
-    """
+class Beacon(Service, ABC):
+    """Base abstract class for beacons: UDP broadcast autodiscovery and message transmission."""
 
     # config
     port: int = attr.field(default=19700)
@@ -47,14 +46,6 @@ class Beacon(ABC):
     listen: bool = attr.field(default=True)
     add_docs(listen, "Whether to listen for broadcast messages")
 
-    # public runtime attributes
-    running: bool = attr.field(
-        default=False,
-        init=False,
-        repr=False,
-    )
-    add_docs(running, "Indicates whether this beacon is currently running")
-
     # public signals
 
     # TODO USE event dispatcher obj
@@ -65,12 +56,7 @@ class Beacon(ABC):
 
     # internal fields; can be used in init
     _clock: "Clock" = attr.field(factory=Clock, repr=False)
-    _socket: anyio.abc.UDPSocket = attr.field(init=False, repr=False)
-
-    # internal fields; can not be used in init
-    _stack: AsyncExitStack = attr.field(init=False, repr=False, default=None)
-    _task_group: anyio.abc.TaskGroup = attr.field(init=False, repr=False, default=None)
-    _stopped: asyncio.Future = attr.field(init=False, repr=False, default=None)
+    _socket: UDPSocket = attr.field(init=False, repr=False)
 
     def encode_message(self) -> bytes:
         ...
@@ -79,26 +65,7 @@ class Beacon(ABC):
         ...
 
     async def __aenter__(self):
-        if self.running:
-            raise RuntimeError("Beacon is already running")
-
-        if self.interface is None:
-            self.interface = await get_active_interface()
-
-        logger.debug(f"{self} starting on {self.addr}:{self.port}")
-
-        self._stopped = asyncio.Future()
-        self._socket = await create_broadcast_socket(
-            local_port=self.port,
-            family=socket.AF_INET,
-            reuse_addr=True,
-        )
-        self._task_group = anyio.create_task_group()
-
-        async with AsyncExitStack() as stack:
-            await stack.enter_async_context(self._socket)
-            await stack.enter_async_context(self._task_group)
-            self._stack = stack.pop_all()
+        await super().__aenter__()
 
         if self.send:
             self._task_group.start_soon(self._start_sender)
@@ -106,37 +73,19 @@ class Beacon(ABC):
         if self.listen:
             self._task_group.start_soon(self._start_listener)
 
-        self.running = True
+    async def _enter_contexts(self, stack: AsyncExitStack) -> None:
+        if self.interface is None:
+            self.interface = await get_active_interface()
 
-    async def __aexit__(
-        self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
-    ) -> Optional[bool]:
-        result = await self._stack.__aexit__(exc_type, exc_val, exc_tb)
-        self.running = False
-        self._stopped.set_result(True)  # todo set exception?
-        logger.debug(f"{self} stopped")
-        return result
+        logger.debug(f"{self} starting on {self.addr}:{self.port}")
 
-    async def start(self):
-        return await self.__aenter__()
-
-    async def stop(self):
-        self.cancel()
-        return await self.__aexit__(None, None, None)
-
-    def cancel(self):
-        logger.debug(f"{self} stopping")
-        self._task_group.cancel_scope.cancel()
-
-    @property
-    def stopped(self):  # TODO
-        if not self.running:
-            raise RuntimeError("Beacon is not running yet!")
-
-        return asyncio.gather(*self._running_tasks, return_exceptions=True)
+        self._socket = await create_broadcast_socket(
+            local_port=self.port,
+            family=socket.AF_INET,
+            reuse_addr=True,
+        )
+        await stack.enter_async_context(self._socket)
+        await super()._enter_contexts(stack)
 
     @property
     def addr(self) -> str:
@@ -256,8 +205,12 @@ if __name__ == "__main__":
         await beacon.start()
         await anyio.sleep(10)
         await beacon.stop()
+
+        beacon = MessageBeacon(message="Hello world")
         async with beacon:
             await anyio.sleep(10)
+
+        print("FIN")
 
     logging.basicConfig(level=logging.DEBUG)
     asyncio.run(main())
