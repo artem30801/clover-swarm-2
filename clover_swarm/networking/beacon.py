@@ -91,7 +91,7 @@ class Beacon(Service, ABC):
     def addr(self) -> str:
         return str(self.interface.network.broadcast_address)
 
-    async def _start_sender(self):
+    async def _start_sender(self) -> NoReturn:
         logger.info(f"{self} sender starting with interval {self.send_interval}")
         rate = self._clock.make_rate(delay=self.send_interval)
 
@@ -103,16 +103,14 @@ class Beacon(Service, ABC):
             logger.info(f"{self} sender stopped")
             raise
 
-    async def _send_beacon(self):
+    async def _send_beacon(self) -> bytes:
         message = self.encode_message()
         await self._socket.sendto(message, self.addr, self.port)
-        logger.debug(
-            f"{self} sent broadcast message {message} to {self.addr}:{self.port}"
-        )
+        logger.debug(f"{self} sent broadcast message {message} to {self.addr}:{self.port}")
         self._task_group.start_soon(self.on_send.emit, message)
         return message
 
-    async def _start_listener(self):
+    async def _start_listener(self) -> NoReturn:
         logger.info(f"{self} listener starting")
         try:
             while True:
@@ -130,7 +128,7 @@ class Beacon(Service, ABC):
             message = self.decode_message(data)
         except Exception as e:
             logger.warning(f"Error during decoding beacon message {data}: {e}")
-            return
+            return None
 
         self._task_group.start_soon(self.on_message.emit, addr, port)
         return message, addr, port
@@ -171,10 +169,8 @@ class AgentBeacon(Beacon):
         )
         return packed
 
-    def decode_message(self, message: bytes) -> Tuple["uuid.UUID", int]:
-        prefix, version, peer_uuid, peer_port = struct.unpack(
-            self.struct_format, message
-        )
+    def decode_message(self, message: bytes) -> Tuple["UUID", int]:
+        prefix, version, peer_uuid, peer_port = struct.unpack(self.struct_format, message)
         if prefix != self.prefix or version != self.version:
             raise ValueError
 
@@ -190,7 +186,7 @@ class AgentBeacon(Beacon):
         await self._process_peer(peer_uuid, host, peer_port)
         return message, host, port
 
-    async def _process_peer(self, peer_uuid, peer_host, peer_port):
+    async def _process_peer(self, peer_uuid: "UUID", peer_host: str, peer_port: int):
         if peer_uuid == self.agent.uuid:
             return
 
