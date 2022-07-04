@@ -10,7 +10,6 @@ from clover_swarm.async_ros import AsyncService
 #
 
 
-
 class FlightServices:
     get_telemetry = AsyncService("get_telemetry", srv.GetTelemetry)
     navigate = AsyncService("navigate", srv.Navigate)
